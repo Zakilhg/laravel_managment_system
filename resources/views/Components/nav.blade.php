@@ -21,10 +21,12 @@
                         <a class="nav-link" href={{ route('dashboard') }}>Profile</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('signout') }}">Logout</a>
+                        <a class="nav-link" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
                     </li>
                 @endguest
             </ul>
         </div>
     </div>
 </nav>
+
+<form id="logout-form" action="{{ route('signout') }}" method="POST" class="d-none">@csrf</form>

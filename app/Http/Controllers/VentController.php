@@ -2,55 +2,49 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Societe;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Achat;
 use App\Models\Paiment;
 use App\Models\Product;
+use App\Models\Societe;
 use App\Models\Vent;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class VentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * This month's sales for the logged-in user.
      */
-    public function index()
+    public function index(Request $request)
     {
-        if(Auth::check()){
-            $user = Auth::user();
-            $query = $user->vents();
-            $vents = $query->where('date_vent', '>=', Carbon::now()->firstOfMonth())->limit(10)->get();
-            return view('user.sales',compact('vents'));
-        }
-        return redirect('/login');
+        $vents = $request->user()->vents()
+            ->with('product')
+            ->where('date_vent', '>=', Carbon::now()->firstOfMonth())
+            ->latest('date_vent')
+            ->get();
+
+        return view('user.sales', compact('vents'));
     }
 
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $paiements =Paiment::all();
+        $paiements = Paiment::all();
         $societes = Societe::all();
-        $products =Product::all();
-        return view('vent.create',compact('products','paiements','societes'));
+        $products = Product::all();
+
+        return view('vent.create', compact('products', 'paiements', 'societes'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $user = User::findOrFail(auth()->user()->id);
+        $user = $request->user();
+
         $request->validate([
-            'product' => 'required',
-            'prix_vent' => 'required|numeric',
-            'quantite'=>'required|numeric',
-            'paiement'=>'required',
+            'product' => 'required|exists:products,id',
+            'prix_vent' => 'required|numeric|min:0',
+            'quantite' => 'required|integer|min:1',
+            'paiement' => 'required|exists:mode_de_paiement,name',
+            'societes' => 'nullable|exists:societes,name',
             'local' => 'required',
             'clientname' => 'required',
             'clientadresse' => 'required',
@@ -58,13 +52,16 @@ class VentController extends Controller
             'clientemail' => 'required|email',
         ]);
 
-        $vent = new Vent();
+        // The purchase price comes from the database, never from the form,
+        // so it can't be tampered with to fake the profit figures.
+        $prixAchat = Achat::where('product_id', $request->product)->value('prix_achat') ?? 0;
 
+        $vent = new Vent();
         $vent->product_id = $request->product;
         $vent->user_id = $user->id;
         $vent->date_vent = Carbon::now()->format('Y-m-d');
         $vent->prix_vent = $request->prix_vent;
-        $vent->prix_achat = $request->prix_achat;
+        $vent->prix_achat = $prixAchat;
         $vent->quantite = $request->quantite;
         $vent->local = $request->local;
         $vent->paiement = $request->paiement;
@@ -74,43 +71,19 @@ class VentController extends Controller
         $vent->clientemail = $request->clientemail;
         $vent->agent = $user->name;
         $vent->par = $user->name;
-        $vent ->societe = $request->societes;
-        $vent ->livraison = 0;
-
+        $vent->societe = $request->societes;
+        $vent->livraison = false;
         $vent->save();
-        return redirect('dashboard')->with('message',"Vent added successfully ");
+
+        return redirect('dashboard')->with('message', 'Vent added successfully');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
-    }
+        // Only the user who recorded a sale may delete it.
+        $vent = $request->user()->vents()->findOrFail($id);
+        $vent->delete();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        Vent::destroy($id);
         return redirect('dashboard');
     }
 }

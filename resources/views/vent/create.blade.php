@@ -16,7 +16,7 @@
                                         <option value="{{$product->id}}">{{$product->name}}</option>
                                     @endforeach
                                 </select>
-                                @if ($errors->has('product'))F
+                                @if ($errors->has('product'))
                                     <span class="text-danger">{{ $errors->first('product') }}</span>
                                 @endif
                             </div>

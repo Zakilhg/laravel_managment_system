@@ -3,30 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Hash;
-use Illuminate\Support\Facades\Storage;
-use Session;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UsersAuthController extends Controller
 {
     public function home()
     {
-        $products = Product::where('quantite', '>=','2' )->limit(6)->get();
-        return view('Components.homepage',compact('products'));
+        $products = Product::where('quantite', '>=', 2)->limit(6)->get();
+
+        return view('Components.homepage', compact('products'));
     }
 
-    public function profile(Request $request)
+    public function profile()
     {
-        if(Auth::check()){
-            $user = Auth::user();
-
-            return view('user.profile');
-        }
-        return redirect('/login');
+        return view('user.profile');
     }
 
     public function index()
@@ -36,18 +31,22 @@ class UsersAuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required',
+        $credentials = $request->validate([
+            'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        $credentials = $request->only('email', 'password');
-        if (Auth::attempt($credentials)) {
-            //   return redirect()->intended('dashboard') hadi katsiftk le lien li knti biti dkhl lih o maqdertish ms mn b3d ma tlogiti ghaydwzk le lien laravel kay3qel ela dak lien
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            // Prevent session fixation.
+            $request->session()->regenerate();
+
+            // intended() sends the user back to the page they originally tried to open.
             return redirect()->intended('dashboard')->with('message', 'Signed in!');
         }
 
-        return redirect('/login')->with('message', 'Login details are not valid!');
+        return redirect('/login')
+            ->withInput($request->only('email'))
+            ->with('message', 'Login details are not valid!');
     }
 
     public function signup()
@@ -56,104 +55,93 @@ class UsersAuthController extends Controller
     }
 
     public function signupsave(Request $request)
-{
-    $request->validate([
-        'name' => 'required',
-        'email' => 'required|email|unique:users',
-        'password' => 'required|min:6',
-        'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        'local' => 'required'
-    ]);
+    {
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'local' => 'required|in:Marrakech,Rabat',
+        ]);
 
-    $imagePath = null;
-    if (isset($request['image'])) {
-        $imagePath = $request['image']->store('public/images');
-        $imagePath = str_replace('public/', '', $imagePath);
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('images', 'public');
+        }
+
+        $user = User::create([
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+            'password' => Hash::make($request->input('password')),
+            'image' => $imagePath,
+            'local' => $request->input('local'),
+        ]);
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect('dashboard');
     }
 
-    $user = User::create([
-        'name' => $request['name'],
-        'email' => $request['email'],
-        'password' => Hash::make($request['password']),
-        'image' => $imagePath,
-        'local' => $request['local']
-    ]);
-
-    return redirect("dashboard");
-}
-
-    public function edit(User $user)
+    public function edit()
     {
         return view('user.edit');
     }
 
-
-
     public function update(Request $request)
     {
+        $user = $request->user();
+
         $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . auth()->user()->id,
+            'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6',
-            'image' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'local' => 'required'
-
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'local' => 'required|in:Marrakech,Rabat',
         ]);
-
-        $user = User::findOrFail(auth()->user()->id);
 
         $user->name = $request->input('name');
         $user->email = $request->input('email');
         $user->local = $request->input('local');
 
-
-        if (!empty($request->input('password'))) {
+        if ($request->filled('password')) {
             $user->password = Hash::make($request->input('password'));
         }
 
         if ($request->hasFile('image')) {
-            // Delete the old image
-            Storage::delete('public/' . $user->image);
-
-            // Store the new image
-            $imagePath = $request->file('image')->store('public/images');
-            $imagePath = str_replace('public/', '', $imagePath);
-            $user->image = $imagePath;
+            if ($user->image) {
+                Storage::disk('public')->delete($user->image);
+            }
+            $user->image = $request->file('image')->store('images', 'public');
         }
-
 
         $user->save();
 
         return redirect('/profile')->with('message', 'User updated successfully!');
     }
 
-
-
     public function dashboard(Request $request)
     {
-        if(Auth::check()){
-            $user = Auth::user();
-            $query = $user->vents();
-            $vents = $query->where('date_vent', '>=', Carbon::now()->firstOfMonth())->limit(10)->get();
-            $products = Product::count(); // Retrieve
+        $monthSales = $request->user()->vents()
+            ->where('date_vent', '>=', Carbon::now()->firstOfMonth());
 
-            // Calculate values
-            $total_prix_vent = $vents->sum('prix_vent');
-            $total_prix_achat = $vents->sum('prix_achat');
-            $total_profit = $total_prix_vent - $total_prix_achat;
-            $percentage = $total_prix_vent > 0 ? round(($total_profit / $total_prix_vent) * 100, 2) : 0;
+        // Totals cover every sale this month; the table only shows the latest 10.
+        $total_prix_vent = (clone $monthSales)->sum('prix_vent');
+        $total_prix_achat = (clone $monthSales)->sum('prix_achat');
+        $vents = (clone $monthSales)->with('product')->latest('date_vent')->limit(10)->get();
 
+        $products = Product::count();
+        $total_profit = $total_prix_vent - $total_prix_achat;
+        $percentage = $total_prix_vent > 0 ? round(($total_profit / $total_prix_vent) * 100, 2) : 0;
 
-            return view('user.dashboard',compact('vents','products', 'total_prix_vent', 'total_prix_achat', 'total_profit', 'percentage'));
-        }
-        return redirect('/login');
+        return view('user.dashboard', compact('vents', 'products', 'total_prix_vent', 'total_prix_achat', 'total_profit', 'percentage'));
     }
 
-
-
-    public function signOut() {
-        Session::flush();
+    public function signOut(Request $request)
+    {
         Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect('login');
     }

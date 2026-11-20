@@ -13,7 +13,7 @@
                     class="fas fa-user me-2"></i>Profile</a>
             <a href="{{route('product.index')}}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold"><i
                     class="fas fa-gift me-2"></i>Products</a>
-            <a href="{{ route('signout') }}" class="list-group-item list-group-item-action bg-transparent text-danger fw-bold"><i
+            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="list-group-item list-group-item-action bg-transparent text-danger fw-bold"><i
                     class="fas fa-power-off me-2"></i>Logout</a>
         </div>
     </div>
@@ -48,7 +48,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item"  href="{{route('profile')}}">Profile</a></li>
-                            <li><a class="dropdown-item" href="{{ route('signout') }}">Logout</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -82,3 +82,5 @@
     });
 
 </script>
+
+<form id="logout-form" action="{{ route('signout') }}" method="POST" class="d-none">@csrf</form>
