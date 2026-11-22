@@ -65,11 +65,7 @@
             <div class="profile-list">
                 <ul>
                     <li><strong class="list-title">E-MAIL</strong><span class="list-cont">{{ Auth::user()->email }}</span></li>
-                    <li><strong class="list-title">AGE</strong><span class="list-cont">23</span></li>
                     <li><strong class="list-title">Local</strong><span class="list-cont">{{ Auth::user()->local }}</span></li>
-                    <li><strong class="list-title">E-MAIL
-                        </strong><span class="list-cont">habiburg3@gmail.com</span></li>
-                    <li><strong class="list-title">PHONE</strong><span class="list-cont">+880 1875-660516</span></li>
                 </ul>
                 <a class="botona" href="{{ route('edit') }}" >Edit</a>
             </div>

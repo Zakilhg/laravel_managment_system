@@ -8,7 +8,7 @@
                     <h3 class="card-header text-center">Edit User</h3>
                     <div class="card-body">
                         <div class="text-center mb-3">
-                            <img src="https://nextlevelpc.ma/wp-content/uploads/2021/05/logo-02-1-1024x1024.png"
+                            <img src="{{ asset('image/logo.png') }}"
                                  class="img-fluid" alt="Logo" style="max-width: 35%">
                         </div>
                         <form action="{{ route('update') }}" method="POST" enctype="multipart/form-data">

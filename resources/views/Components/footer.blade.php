@@ -11,9 +11,7 @@
                         PC Gamer | Workstation | Meilleure destination Gaming Maroc sur Nextlevelpc.ma, n°1 du Gaming Maroc , Comparez et achetez votre Workstation en livraison rapide à domicile ou en magasin.
                     </p>
                     <div class="hr"></div>
-                    <h6>Espace ASAFWA Av Allal Fassi 1er Etage Bureau 6&7, Marrakech 40000</h6>
-                    <h6>21 Rue Jabal Bouiblane, Rabat 10080</h6>
-                    <h6>contact@nextlevelpc.ma<span>|</span>+212665787365</h6>
+                    <h6>Marrakech | Rabat</h6>
                     <div class="contact-social">
                         <ul>
                             <li>
@@ -24,11 +22,6 @@
                             <li>
                                 <a class="hover-target" href="https://www.instagram.com/nextlevgaming_maroc/" target="_blank"
                                 ><i class="fab fa-instagram"></i
-                                    ></a>
-                            </li>
-                            <li>
-                                <a class="hover-target" href="https://api.whatsapp.com/send/?phone=212663608040&text&type=phone_number&app_absent=0" target="_blank"
-                                ><i class="fab fa-whatsapp"></i
                                     ></a>
                             </li>
                             <li>
