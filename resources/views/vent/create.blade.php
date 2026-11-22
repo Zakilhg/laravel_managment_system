@@ -67,8 +67,11 @@
 
 
                             <div class="form-group mb-3">
-                                <input type="text" placeholder="Local" id="local" class="form-control"
-                                       name="local"  >
+                                <select id="local" class="form-control" name="local">
+                                    @foreach (['Marrakech', 'Rabat'] as $store)
+                                        <option value="{{ $store }}" @selected(old('local', Auth::user()->local) === $store)>{{ $store }}</option>
+                                    @endforeach
+                                </select>
                                 @if ($errors->has('local'))
                                     <span class="text-danger">{{ $errors->first('local') }}</span>
                                 @endif
