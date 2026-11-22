@@ -4,7 +4,7 @@ A small sales and stock management app built with Laravel. Users sign in, browse
 
 ## Requirements
 
-- PHP 8.3+ with Composer (Laravel 13)
+- PHP 8.4+ with Composer (Laravel 13)
 - MySQL (or SQLite for a quick local try)
 - Node.js for the front-end assets
 
